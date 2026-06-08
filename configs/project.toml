@@ -1,0 +1,20 @@
+[project]
+name = "Bank Marketing Strategy"
+slug = "05_bank_marketing_strategy"
+family = "generic"
+problem_type = "clustering"
+business_goal = "Segment credit card customers to support marketing actions and profile-based strategy design."
+primary_metric = "Silhouette, Davies-Bouldin, Calinski-Harabasz, and cluster profile"
+
+[data]
+train_file = "data/raw/cc_general.csv"
+id_columns = ["CUST_ID"]
+drop_columns = []
+
+[modeling]
+cluster_range = [3, 4, 5, 6, 7, 8]
+silhouette_sample_size = 10000
+random_state = 42
+model_file = "models/model.joblib"
+
+[evaluation]

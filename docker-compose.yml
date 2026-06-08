@@ -1,0 +1,22 @@
+services:
+  app:
+    build: .
+    image: bank-marketing-strategy:latest
+    command: ["app"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/project/data
+      - ./models:/project/models
+      - ./reports:/project/reports
+
+  api:
+    build: .
+    image: bank-marketing-strategy:latest
+    command: ["api"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/project/data
+      - ./models:/project/models
+      - ./reports:/project/reports

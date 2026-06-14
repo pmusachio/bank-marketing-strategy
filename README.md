@@ -1,212 +1,101 @@
-# Bank Marketing Strategy
+# Bank Marketing Strategy — Customer Segmentation
 
-A data science portfolio project based on the Kaggle dataset [Credit Card Dataset for Clustering](https://www.kaggle.com/datasets/arjunbhasin2013/ccdata).
+> Unsupervised learning · KMeans clustering · Behavioural segmentation
 
-The project follows the end-to-end machine learning project workflow described in
-*Hands-On Machine Learning with Scikit-Learn and PyTorch* (Aurélien Géron): frame the
-business problem, explore and prepare the data, build a reproducible pipeline, evaluate
-with the right metrics, and ship the result through channels that real users (a marketing
-team, in this case) can actually consume.
+## Business Problem
 
-## Quick Start for Recruiters
+A bank wants to move from one-size-fits-all credit-card marketing to **profile-based strategy**.
+The question is not a prediction but a structure: *what natural groups exist in how customers use
+their cards*, so that each group can get a tailored action (rewards, upsell, risk monitoring,
+reactivation).
 
-You don't need to set up a Python environment to see this project working. With
-[Docker](https://www.docker.com/) installed, run:
+There is no label to predict here, so this is an **unsupervised segmentation** problem rather than
+classification. The "cost of error" is a poorly-defined segmentation that sends the wrong offer to
+the wrong group — wasted marketing spend and missed cross-sell. The model is judged on cluster
+quality (separation and cohesion) and, above all, on whether the segments are **interpretable and
+actionable**.
 
-```bash
-git clone <THIS_REPOSITORY_URL> bank-marketing-strategy
-cd bank-marketing-strategy
-# place the Kaggle CSV at data/raw/cc_general.csv (see data/raw/README.md)
-docker compose up --build
-```
+## Dataset
 
-Then open:
+[Credit Card Dataset for Clustering](https://www.kaggle.com/datasets/arjunbhasin2013/ccdata)
 
-- **Dashboard:** [http://localhost:8501](http://localhost:8501) — interactive view of customer segments
-- **API docs:** [http://localhost:8000/docs](http://localhost:8000/docs) — Swagger UI for the prediction endpoint
+| Property | Value |
+|----------|-------|
+| Rows | 8,950 active card holders |
+| Features | 17 usage behaviours (balance, purchases, cash advance, frequencies, limit, payments, tenure) |
+| Target | none (unsupervised) |
+| Missing | `CREDIT_LIMIT` (1), `MINIMUM_PAYMENTS` (313), median-imputed |
 
-The first run automatically trains the model and generates the reports — there is nothing
-else to configure. See [Section 12](#12-how-to-run) for local (non-Docker) instructions and
-[`docs/deployment.md`](docs/deployment.md) for deployment details.
+## Solution Strategy
 
-## 1. Business Problem
+1. **Acquisition** — pull the dataset from Kaggle on demand; a versioned sample backs an offline run.
+2. **Preparation** — median imputation and a log1p transform of the heavily right-skewed monetary and count features, inside the model `Pipeline` so serving reuses the exact transform; standardization follows.
+3. **Model selection** — KMeans is fit across k = 3..8 and the number of segments is chosen by silhouette, cross-checked against Davies-Bouldin and Calinski-Harabasz.
+4. **Profiling** — each segment is profiled on the original feature scale and labelled automatically from its most distinctive behaviours.
+5. **Activation** — every segment is mapped to a suggested marketing action.
 
-A bank marketing team needs to turn credit card behavior into actionable customer segments.
+## Top Insights & Hypotheses
 
-**Objective:** Segment credit card customers to support marketing, relationship, and offer strategies.
+- **Three behavioural segments emerge** cleanly from card usage, each about a third of the base.
+- **Active spenders** (high purchase frequency, high purchases) are the prime cross-sell and rewards audience.
+- **Cash-advance revolvers** (high cash advance, almost no purchases) are a distinct risk-and-credit group, not a spending one.
+- **Light / low-balance users** form the third group, a reactivation target.
+- **Separation is moderate** (silhouette 0.23): card behaviour is continuous, so the segments are useful summaries rather than hard boundaries — noted in Next Steps.
 
-**Primary metric:** Silhouette, Davies-Bouldin, Calinski-Harabasz, and cluster profile.
+## Model
 
-## 2. Business Assumptions
+KMeans on standardized, log-transformed features, with k chosen by clustering quality.
 
-- Segments must be interpretable, not just technically separable.
-- Customers with distinct purchase, payment, and credit-usage patterns require different approaches.
-- Choosing the number of clusters must combine technical metrics with business judgment.
+| k | Silhouette | Davies-Bouldin | Calinski-Harabasz |
+|---|-----------:|---------------:|------------------:|
+| **3 (selected)** | **0.226** | 1.681 | 2643 |
+| 4 | 0.212 | 1.663 | 2256 |
+| 5 | 0.218 | 1.595 | 2129 |
+| 6 | 0.218 | 1.467 | 2009 |
 
-## 3. Solution Strategy
+The full preprocessing-plus-KMeans pipeline is serialized, so a new customer is assigned to a
+segment with the identical transform used in training.
 
-1. **Step 01. Data Description:** Validate schema, dimensions, missing values, types, and granularity.
-2. **Step 02. Feature Engineering:** Create variables oriented to the problem domain.
-3. **Step 03. Data Filtering:** Remove records with no analytical value or leakage risk.
-4. **Step 04. Exploratory Data Analysis:** Validate hypotheses and separate relevant signal from noise.
-5. **Step 05. Data Preparation:** Impute, scale, and encode variables for modeling.
-6. **Step 06. Feature Selection:** Separate IDs, target, input variables, and dropped columns.
-7. **Step 07. Machine Learning Modelling:** Train a reproducible baseline and evaluate technical metrics.
-8. **Step 08. Hyperparameter/Fit Strategy:** Reserve room for tuning, thresholds, and model comparison.
-9. **Step 09. Business Translation:** Convert metrics into decisions, prioritization, risk, revenue, or operations.
-10. **Step 10. Delivery:** Generate the segmented base, the Streamlit dashboard, and the BI layer for cluster consumption.
+## Business Results
 
-## 4. Data Source
+| Segment | Share | Profile | Suggested action |
+|---------|------:|---------|------------------|
+| 0 | 35% | High purchase frequency (active spenders) | Reward and cross-sell premium products. |
+| 1 | 32% | Low balance (light users) | Standard engagement; reactivation. |
+| 2 | 32% | High cash advance, low purchases (revolvers) | Monitor risk, offer structured credit. |
 
-Source on Kaggle: [Credit Card Dataset for Clustering](https://www.kaggle.com/datasets/arjunbhasin2013/ccdata).
+The bank can now run three targeted programs instead of one generic campaign, concentrating
+rewards on spenders, credit products on revolvers and reactivation on light users.
 
-Expected file:
+## How to Run
 
-- `data/raw/cc_general.csv`
+1. **Clone**
+   ```
+   git clone https://github.com/pmusachio/bank-marketing-strategy.git
+   cd bank-marketing-strategy
+   ```
+2. **Environment**
+   ```
+   python -m venv .venv && source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+3. **Kaggle access** — place a Kaggle API token at `~/.kaggle/`; the pipeline falls back to the versioned sample if none is present.
+4. **Run the pipeline**
+   ```
+   python -m src.pipeline
+   ```
+5. **Tests**
+   ```
+   pytest tests/
+   ```
+6. **App (local)**
+   ```
+   streamlit run app/streamlit_app.py
+   ```
+7. **Live app** — [huggingface.co/spaces/pmusachio/bank-marketing-strategy](https://huggingface.co/spaces/pmusachio/bank-marketing-strategy) — profile a customer and see their segment on the map.
 
-See [`data/raw/README.md`](data/raw/README.md) for download instructions via the Kaggle API.
+## Next Steps
 
-## 5. Development Journey
-
-The notebooks are organized to show the evolution of the analysis, from problem framing to
-the business translation of the results. They are also the best place to grab screenshots
-for a portfolio walkthrough:
-
-- [`notebooks/00_business_understanding.ipynb`](notebooks/00_business_understanding.ipynb)
-- [`notebooks/01_data_understanding.ipynb`](notebooks/01_data_understanding.ipynb)
-- [`notebooks/02_exploratory_analysis.ipynb`](notebooks/02_exploratory_analysis.ipynb)
-- [`notebooks/03_feature_engineering.ipynb`](notebooks/03_feature_engineering.ipynb)
-- [`notebooks/04_modeling_and_business_results.ipynb`](notebooks/04_modeling_and_business_results.ipynb)
-- [`notebooks/05_deployment_and_consumption.ipynb`](notebooks/05_deployment_and_consumption.ipynb)
-
-## 6. Top Data Insights and Hypotheses
-
-- Customers with high credit limit and low usage call for a different strategy than revolving customers.
-- Purchase frequency separates transactional customers from occasional ones.
-- Minimum payments and cash advances signal risk profile or a need for financial education.
-
-## 7. Model or Analysis Applied
-
-Clustering with KMeans, with the number of clusters selected via silhouette,
-Davies-Bouldin, and Calinski-Harabasz scores, computed inside a single
-`scikit-learn` `Pipeline` (imputation, scaling, encoding, and the estimator) so that
-training and inference always apply the exact same transformations — one of the core
-recommendations from the book's end-to-end project chapter.
-
-## 8. Performance and Business Results
-
-Data profile reproduced in [`reports/data_profile.json`](reports/data_profile.json): 8,950 rows and 18 columns analyzed.
-
-Main pipeline outputs:
-
-- `reports/cluster_assignments.csv`
-- `reports/metrics.json`
-
-## 9. Business Translation
-
-Clusters become campaign groups: retention, credit-limit increase, financial education, or usage incentives.
-
-## 10. Repository Structure
-
-- `configs/project.toml`: project contract — data, target, metrics, and parameters.
-- `src/bank_marketing_strategy/`: modular Python code for data, features, modeling, analysis, and serving.
-- `notebooks/`: the analytical journey, in notebooks.
-- `data/raw/`: files downloaded from Kaggle or the prepared analytical base.
-- `reports/`: metrics, profiles, and results generated by the pipeline.
-- `docs/deployment.md`: delivery and consumption notes.
-- `app/streamlit_app.py`: dashboard for customer segments.
-- `models/`: trained model artifact.
-- `Dockerfile`, `docker-compose.yml`, `docker/entrypoint.sh`: one-command, reproducible deployment (training + dashboard + API).
-- `.github/workflows/ci.yml`: GitHub Actions pipeline that runs the test suite and builds the Docker image on every push.
-
-## 11. How to Run on Google Colab
-
-1. Open a new notebook on Google Colab.
-2. Generate your token at Kaggle > Account > API > Create New Token.
-3. Run the cells below.
-
-Clone the repository and install the dependencies:
-
-```python
-REPO_URL = "https://github.com/<your-username>/<repository-name>.git"
-!git clone {REPO_URL} project
-%cd project
-!python -m pip install -q -r requirements.txt
-```
-
-Download or prepare the data:
-
-```python
-from google.colab import files
-files.upload()  # upload your kaggle.json file
-
-!mkdir -p ~/.kaggle
-!cp kaggle.json ~/.kaggle/kaggle.json
-!chmod 600 ~/.kaggle/kaggle.json
-!mkdir -p data/raw
-!python -m pip install -q kaggle
-!kaggle datasets download -d arjunbhasin2013/ccdata --unzip -p data/raw
-!find data/raw -maxdepth 1 -name "*.zip" -exec unzip -q -o {} -d data/raw \;
-!mv "data/raw/CC GENERAL.csv" data/raw/cc_general.csv 2>/dev/null || true
-```
-
-Run the main flow:
-
-```python
-!PYTHONPATH=src python -m bank_marketing_strategy.cli validate-config
-!PYTHONPATH=src python -m bank_marketing_strategy.cli profile
-!PYTHONPATH=src python -m bank_marketing_strategy.cli train
-```
-
-## 12. How to Run
-
-### Option A — Docker (recommended, fully automated)
-
-The fastest way to see the whole solution working — training, dashboard, and API — with a
-single command (see the [Quick Start for Recruiters](#quick-start-for-recruiters) above):
-
-```bash
-docker compose up --build
-```
-
-### Option B — Local Python environment
-
-Batch / pipeline mode:
-
-```bash
-git clone <REPOSITORY_URL> project
-cd project
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-PYTHONPATH=src python -m bank_marketing_strategy.cli profile
-PYTHONPATH=src python -m bank_marketing_strategy.cli train
-```
-
-Dashboard and API:
-
-```bash
-python -m pip install -r requirements-app.txt -r requirements-api.txt
-PYTHONPATH=src python -m bank_marketing_strategy.cli train
-PYTHONPATH=src streamlit run app/streamlit_app.py
-# in another terminal
-PYTHONPATH=src uvicorn bank_marketing_strategy.api:app --reload
-```
-
-For BI, load `reports/cluster_assignments.csv` into a SQL table and connect Metabase or Power BI to it.
-More details in [`docs/deployment.md`](docs/deployment.md).
-
-## 13. Next Steps to Improve
-
-- Name cluster personas using descriptive statistics.
-- Build a recommended-action matrix per segment.
-- Test cluster stability across time windows.
-
-## 14. Tests
-
-```bash
-python -m pytest
-```
-
-Continuous integration runs the test suite and builds the Docker image on every push to `main`
-(see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+- Because separation is moderate, validate the segments with marketing-response data: the real test of a segmentation is whether segment-specific offers outperform a generic one.
+- Try Gaussian mixture or hierarchical clustering for soft assignments, which may suit the continuous nature of card behaviour better than hard KMeans boundaries; deferred until the current segments are validated in market.
+- Refresh the segmentation periodically, since usage behaviour drifts with the economy and product changes.

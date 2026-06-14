@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.0",
+  "trained_at": "2026-06-14T14:36:37+00:00",
+  "dataset": "arjunbhasin2013/ccdata",
+  "data_sha256": "29eea6389837c40fd760c927b5782563edeff55a37824598489716bdb3563be1",
+  "problem": "customer segmentation (KMeans clustering)",
+  "k_selection": [
+    {
+      "k": 3,
+      "silhouette": 0.2255,
+      "davies_bouldin": 1.6813,
+      "calinski_harabasz": 2642.9
+    },
+    {
+      "k": 4,
+      "silhouette": 0.2124,
+      "davies_bouldin": 1.6632,
+      "calinski_harabasz": 2256.1
+    },
+    {
+      "k": 5,
+      "silhouette": 0.2181,
+      "davies_bouldin": 1.5949,
+      "calinski_harabasz": 2129.2
+    },
+    {
+      "k": 6,
+      "silhouette": 0.2179,
+      "davies_bouldin": 1.4674,
+      "calinski_harabasz": 2009.4
+    },
+    {
+      "k": 7,
+      "silhouette": 0.2064,
+      "davies_bouldin": 1.5145,
+      "calinski_harabasz": 1836.9
+    },
+    {
+      "k": 8,
+      "silhouette": 0.1955,
+      "davies_bouldin": 1.7089,
+      "calinski_harabasz": 1647.1
+    }
+  ],
+  "selected_k": 3,
+  "evaluation": {
+    "selected_k": 3,
+    "quality": {
+      "k": 3,
+      "silhouette": 0.2255,
+      "davies_bouldin": 1.6813,
+      "calinski_harabasz": 2642.9
+    },
+    "segment_sizes": {
+      "0": 3174,
+      "1": 2899,
+      "2": 2877
+    }
+  },
+  "business": {
+    "segments": 3,
+    "actions": [
+      {
+        "segment": 0,
+        "share_pct": 35.5,
+        "profile": "High purchases frequency",
+        "suggested_action": "Active spenders: reward and cross-sell premium products."
+      },
+      {
+        "segment": 1,
+        "share_pct": 32.4,
+        "profile": "Low balance",
+        "suggested_action": "Average usage: standard engagement and monitoring."
+      },
+      {
+        "segment": 2,
+        "share_pct": 32.1,
+        "profile": "High cash advance, low purchases frequency",
+        "suggested_action": "Revolving / cash-reliant: monitor risk, offer structured credit."
+      }
+    ]
+  },
+  "segment_profiles": {
+    "0": {
+      "size": 3174,
+      "share_pct": 35.5,
+      "label": "High purchases frequency",
+      "means": {
+        "BALANCE": 2060.89,
+        "PURCHASES": 2309.64,
+        "CASH_ADVANCE": 775.36,
+        "CREDIT_LIMIT": 5776.94,
+        "PAYMENTS": 2648.14,
+        "PURCHASES_FREQUENCY": 0.84,
+        "PRC_FULL_PAYMENT": 0.16,
+        "TENURE": 11.79
+      }
+    },
+    "1": {
+      "size": 2899,
+      "share_pct": 32.4,
+      "label": "Low balance",
+      "means": {
+        "BALANCE": 231.71,
+        "PURCHASES": 466.02,
+        "CASH_ADVANCE": 32.72,
+        "CREDIT_LIMIT": 3299.58,
+        "PAYMENTS": 703.37,
+        "PURCHASES_FREQUENCY": 0.52,
+        "PRC_FULL_PAYMENT": 0.27,
+        "TENURE": 11.38
+      }
+    },
+    "2": {
+      "size": 2877,
+      "share_pct": 32.1,
+      "label": "High cash advance, low purchases frequency",
+      "means": {
+        "BALANCE": 2359.78,
+        "PURCHASES": 103.19,
+        "CASH_ADVANCE": 2156.78,
+        "CREDIT_LIMIT": 4283.15,
+        "PAYMENTS": 1761.34,
+        "PURCHASES_FREQUENCY": 0.07,
+        "PRC_FULL_PAYMENT": 0.03,
+        "TENURE": 11.35
+      }
+    }
+  }
+}

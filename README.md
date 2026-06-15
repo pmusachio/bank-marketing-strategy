@@ -92,7 +92,7 @@ rewards on spenders, credit products on revolvers and reactivation on light user
    ```
    streamlit run app/streamlit_app.py
    ```
-7. **Live app** — [huggingface.co/spaces/pmusachio/bank-marketing-strategy](https://huggingface.co/spaces/pmusachio/bank-marketing-strategy) — profile a customer and see their segment on the map.
+7. **Live app** — [bank-marketing-strategy.onrender.com](https://bank-marketing-strategy.onrender.com) — profile a customer and see their segment on the map.
 
 ## Next Steps
 
